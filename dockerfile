@@ -15,7 +15,10 @@ RUN yarn install --frozen-lockfile --production=true && yarn cache clean
 COPY . .
 
 # 构建 Nuxt 应用（生成 .output 目录）
-ENV NODE_ENV=production NITRO_KV_DRIVER=fs NITRO_KV_BASE=.data/kv
+ENV NODE_ENV=production \
+    NITRO_KV_DRIVER=fs \
+    NITRO_KV_BASE=.data/kv
+
 RUN yarn build
 
 
@@ -45,11 +48,7 @@ USER node
 EXPOSE 3000
 
 # 设置环境变量：生产模式，监听所有接口
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 NUXT_PRESET=docker
-
-# 添加健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 
 # 启动命令：运行 Nitro 生成的服务器
 ENTRYPOINT ["node", "server/index.mjs"]

@@ -17,8 +17,8 @@ logs
 .DS_Store
 .fleet
 .idea
+debug
 design
-nuxt-options.json
 
 # Local env files
 .env

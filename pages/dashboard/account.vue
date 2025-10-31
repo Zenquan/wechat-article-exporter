@@ -521,16 +521,15 @@ function deleteSelectedAccounts() {
           @click="deleteSelectedAccounts"
           >删除所选公众号</UButton
         >
-        <UChip text="pro" size="xl" color="fuchsia">
-          <UButton
-            color="blue"
-            icon="i-heroicons:arrow-path-rounded-square-20-solid"
-            :loading="isSyncing"
-            :disabled="isDeleting || !hasSelectedRows"
-            @click="loadSelectedAccountArticle"
-            >同步所选公众号</UButton
-          >
-        </UChip>
+        <UButton
+          color="blue"
+          icon="i-heroicons:arrow-path-rounded-square-20-solid"
+          :loading="isSyncing"
+          :disabled="isDeleting || !hasSelectedRows"
+          @click="loadSelectedAccountArticle"
+        >
+          同步所选公众号
+        </UButton>
       </header>
 
       <!-- 数据表格 -->
