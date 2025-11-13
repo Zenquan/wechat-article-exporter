@@ -7,30 +7,43 @@
 ![GitHub stars]
 ![GitHub forks]
 ![GitHub License]
+![Package Version]
 
 
-一个在线的微信公众号文章批量下载工具，支持下载阅读量与评论数据，无需搭建任何环境，HTML 格式可100%还原文章样式，支持私有化部署，可在 Windows/macOS/Linux 系统上使用。
+一款在线的 **微信公众号文章批量下载** 工具，支持导出阅读量与评论数据，无需搭建任何环境，可通过 [在线网站] 使用，同时也支持 docker 私有化部署和 Cloudflare 部署。
+
+支持下载各种文件格式，其中 HTML 格式可100%还原文章排版与样式。
 
 交流群(QQ): `991482155`
+
+## 重要告知：项目域名调整
+后续项目域名调整如下：
+
+|     | 下载站                            | 文档站                        |
+|-----|--------------------------------|----------------------------|
+| 调整前 | https://exporter.wxdown.online | https://docs.wxdown.online |
+| 调整后 | https://down.mptext.top        | https://docs.mptext.top    |
+
+具体细节可以查看 [这里](https://docs.mptext.top/misc/domain.html)。
 
 
 ## 文档
 
-[文档站点](https://docs.wxdown.online) 上线啦 🎉🎉🎉，后续使用教程会在此站点统一进行维护。
+[文档站点](https://docs.mptext.top) 上线啦 🎉🎉🎉，后续使用教程会在此站点统一进行维护。
 
 
 ## :dart: 特性
 
 - [x] 搜索公众号，支持关键字搜索
-- [x] 搜索公众号内文章(根据文章标题搜索)
 - [x] 支持导出 html/json/excel/txt 格式(html 格式打包了图片和样式文件，能够保证100%还原文章样式)
-- [x] 缓存文章列表数据，减少接口请求次数 (关键字搜索的文章不会进入缓存)
+- [x] 缓存文章列表数据，减少接口请求次数
 - [x] 支持文章过滤，包括作者、标题、发布时间、原创标识、所属合集等
 - [x] 支持合集下载
 - [x] 支持图片分享消息
 - [x] 支持视频分享消息
-- [x] 支持导出评论、评论回复、阅读量、转发量等数据 (需要抓包获取 credentials 信息，[查看操作步骤](docs/credentials.md))
-- [x] 支持docker部署
+- [x] 支持导出评论、评论回复、阅读量、转发量等数据 (需要抓包获取 credentials 信息，[查看操作步骤](https://docs.mptext.top/advanced/wxdown-service.html))
+- [x] 支持 Docker 部署
+- [x] 支持 Cloudflare 部署
 - [x] 开放 API 接口
 
 
@@ -60,7 +73,7 @@ MIT
 
 您的公众号只会服务于您自己的抓取文章的目的。
 
-通过本程序获取的公众号文章内容，版权归文章原作者所有，请合理使用。若发现侵权行为，请通过邮件联系我们。
+通过本程序获取的公众号文章内容，版权归文章原作者所有，请合理使用。若发现侵权行为，请联系我们处理。
 
 
 ## :star: Star 历史
@@ -71,15 +84,14 @@ MIT
 
 <!-- Definitions -->
 
-[deploy-badge]: https://img.shields.io/github/actions/workflow/status/jooooock/wechat-article-exporter/.github%2Fworkflows%2Fdeno_deploy.yml?label=Deploy
-
-[deploy]: https://github.com/jooooock/wechat-article-exporter/actions
-
 [GitHub stars]: https://img.shields.io/github/stars/wechat-article/wechat-article-exporter?style=social&label=Star&style=plastic
 
 [GitHub forks]: https://img.shields.io/github/forks/wechat-article/wechat-article-exporter?style=social&label=Fork&style=plastic
 
 [GitHub License]: https://img.shields.io/github/license/wechat-article/wechat-article-exporter?label=License
+
+[Package Version]: https://img.shields.io/github/package-json/v/wechat-article/wechat-article-exporter
+
 
 [Deno Deploy]: https://deno.com/deploy
 
@@ -90,3 +102,5 @@ MIT
 [Star History Chart]: https://api.star-history.com/svg?repos=wechat-article/wechat-article-exporter&type=Timeline
 
 [Star History Chart Link]: https://star-history.com/#wechat-article/wechat-article-exporter&Timeline
+
+[在线网站]: https://down.mptext.top

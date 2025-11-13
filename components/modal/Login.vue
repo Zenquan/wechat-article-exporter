@@ -30,7 +30,7 @@ function onClose() {
  */
 async function newLoginSession() {
   const sid = new Date().getTime().toString() + Math.floor(Math.random() * 100);
-  const resp = await $fetch<StartLoginResult>(`/api/login/session/${sid}`, { method: 'POST' });
+  const resp = await $fetch<StartLoginResult>(`/api/web/login/session/${sid}`, { method: 'POST' });
   if (!resp || !resp.base_resp || resp.base_resp.ret !== 0) {
     throw new Error(`${resp?.base_resp?.err_msg || '获取登录会话失败'}`);
   }
@@ -42,7 +42,7 @@ async function getQrcode() {
     loading.value = true;
     msg.value = '获取登录二维码';
     await newLoginSession();
-    qrcodeSrc.value = `/api/login/getqrcode?rnd=${Math.random()}`;
+    qrcodeSrc.value = `/api/web/login/getqrcode?rnd=${Math.random()}`;
     msg.value = '';
 
     // 启动计时器开始轮训检查
@@ -62,7 +62,7 @@ function _check() {
 
 // 检查二维码扫描状态
 async function checkQrcodeStatus() {
-  const resp = await $fetch<ScanLoginResult>('/api/login/scan', {
+  const resp = await $fetch<ScanLoginResult>('/api/web/login/scan', {
     method: 'GET',
   });
   if (resp && resp.base_resp && resp.base_resp.ret === 0) {
@@ -78,7 +78,7 @@ async function checkQrcodeStatus() {
       case 2:
       case 3:
         // 刷新二维码
-        qrcodeSrc.value = `/api/login/getqrcode?rnd=${Math.random()}`;
+        qrcodeSrc.value = `/api/web/login/getqrcode?rnd=${Math.random()}`;
         _check();
         break;
       case 4:
@@ -104,7 +104,7 @@ async function checkQrcodeStatus() {
 async function bizLogin() {
   try {
     loading.value = true;
-    const resp = await $fetch<LoginAccount>('/api/login/bizlogin', {
+    const resp = await $fetch<LoginAccount>('/api/web/login/bizlogin', {
       method: 'POST',
     });
     if (resp.err) {

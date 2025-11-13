@@ -1,4 +1,4 @@
-export const isDev = !import.meta.env.PROD;
+export const isDev = process.env.NODE_ENV === 'development';
 
 export const websiteName = '公众号文章导出';
 
@@ -22,57 +22,94 @@ export const ACCOUNT_TYPE: Record<number, string> = {
 };
 
 /**
- * 公共代理
+ * https://00.workers-proxy.shop
+ * https://01.workers-proxy.shop
+ * https://02.workers-proxy.shop
+ * https://03.workers-proxy.shop
+ * https://04.workers-proxy.shop
+ * https://05.workers-proxy.shop
+ * https://06.workers-proxy.shop
+ * https://07.workers-proxy.shop
+ * https://08.workers-proxy.shop
+ * https://09.workers-proxy.shop
+ * https://10.workers-proxy.shop
+ * https://11.workers-proxy.shop
+ * https://12.workers-proxy.shop
+ * https://13.workers-proxy.shop
+ * https://14.workers-proxy.shop
+ * https://15.workers-proxy.shop
+ * https://00.workers-proxy.top
+ * https://01.workers-proxy.top
+ * https://02.workers-proxy.top
+ * https://03.workers-proxy.top
+ * https://04.workers-proxy.top
+ * https://05.workers-proxy.top
+ * https://06.workers-proxy.top
+ * https://07.workers-proxy.top
+ * https://08.workers-proxy.top
+ * https://09.workers-proxy.top
+ * https://10.workers-proxy.top
+ * https://11.workers-proxy.top
+ * https://12.workers-proxy.top
+ * https://13.workers-proxy.top
+ * https://14.workers-proxy.top
+ * https://15.workers-proxy.top
+ * https://00.workers-proxy.ggff.net
+ * https://01.workers-proxy.ggff.net
+ * https://02.workers-proxy.ggff.net
+ * https://03.workers-proxy.ggff.net
+ * https://04.workers-proxy.ggff.net
+ * https://05.workers-proxy.ggff.net
+ * https://06.workers-proxy.ggff.net
+ * https://07.workers-proxy.ggff.net
+ * https://08.workers-proxy.ggff.net
+ * https://09.workers-proxy.ggff.net
+ * https://10.workers-proxy.ggff.net
+ * https://11.workers-proxy.ggff.net
+ * https://12.workers-proxy.ggff.net
+ * https://13.workers-proxy.ggff.net
+ * https://14.workers-proxy.ggff.net
+ * https://15.workers-proxy.ggff.net
  */
-export const PUBLIC_PROXY_LIST: string[] = [
-  'https://00.workers-proxy.top',
-  'https://01.workers-proxy.top',
-  'https://02.workers-proxy.top',
-  'https://03.workers-proxy.top',
-  'https://04.workers-proxy.top',
-  'https://05.workers-proxy.top',
-  'https://06.workers-proxy.top',
-  'https://07.workers-proxy.top',
-  'https://08.workers-proxy.top',
-  'https://09.workers-proxy.top',
-  'https://10.workers-proxy.top',
-  'https://11.workers-proxy.top',
-  'https://12.workers-proxy.top',
-  'https://13.workers-proxy.top',
-  'https://14.workers-proxy.top',
-  'https://15.workers-proxy.top',
-
-  'https://00.workers-proxy.ggff.net',
-  'https://01.workers-proxy.ggff.net',
-  'https://02.workers-proxy.ggff.net',
-  'https://03.workers-proxy.ggff.net',
-  'https://04.workers-proxy.ggff.net',
-  'https://05.workers-proxy.ggff.net',
-  'https://06.workers-proxy.ggff.net',
-  'https://07.workers-proxy.ggff.net',
-  'https://08.workers-proxy.ggff.net',
-  'https://09.workers-proxy.ggff.net',
-  'https://10.workers-proxy.ggff.net',
-  'https://11.workers-proxy.ggff.net',
-  'https://12.workers-proxy.ggff.net',
-  'https://13.workers-proxy.ggff.net',
-  'https://14.workers-proxy.ggff.net',
-  'https://15.workers-proxy.ggff.net',
-];
 
 /**
- * 扫码状态
+ * 公共代理节点
  */
-const SCAN_LOGIN_TYPE = {
-  0: '等待扫码',
-  1: '扫码成功，可登录账号=1',
-  2: '扫码成功，可登录账号>1',
-  3: '没有可登录账号',
-  4: '登录失败',
-  5: '二维码已过期',
-  6: '二维码加载失败',
-  7: 'qq号需要绑定邮箱',
-};
+export const PUBLIC_PROXY_LIST: string[] = [
+  'https://00.worker-proxy.asia',
+  'https://01.worker-proxy.asia',
+  'https://02.worker-proxy.asia',
+  'https://03.worker-proxy.asia',
+  'https://04.worker-proxy.asia',
+  'https://05.worker-proxy.asia',
+  'https://06.worker-proxy.asia',
+  'https://07.worker-proxy.asia',
+  'https://08.worker-proxy.asia',
+  'https://09.worker-proxy.asia',
+  'https://10.worker-proxy.asia',
+  'https://11.worker-proxy.asia',
+  'https://12.worker-proxy.asia',
+  'https://13.worker-proxy.asia',
+  'https://14.worker-proxy.asia',
+  'https://15.worker-proxy.asia',
+
+  'https://00.net-proxy.asia',
+  'https://01.net-proxy.asia',
+  'https://02.net-proxy.asia',
+  'https://03.net-proxy.asia',
+  'https://04.net-proxy.asia',
+  'https://05.net-proxy.asia',
+  'https://06.net-proxy.asia',
+  'https://07.net-proxy.asia',
+  'https://08.net-proxy.asia',
+  'https://09.net-proxy.asia',
+  'https://10.net-proxy.asia',
+  'https://11.net-proxy.asia',
+  'https://12.net-proxy.asia',
+  'https://13.net-proxy.asia',
+  'https://14.net-proxy.asia',
+  'https://15.net-proxy.asia',
+];
 
 /**
  * Credentials 生存时间，单位：分钟
@@ -85,11 +122,11 @@ export const CREDENTIAL_LIVE_MINUTES: number = 25;
 export const CREDENTIAL_API_HOST = 'http://127.0.0.1:8088';
 
 // 文档站点地址
-export const docsWebSite = 'https://docs.wxdown.online';
+export const docsWebSite = 'https://docs.mptext.top';
 
 export const apis = [
   {
-    name: '搜索公众号',
+    name: '根据关键字搜索公众号',
     description: '根据公众号名称或关键字查询公众号列表。',
     url: '/api/public/v1/account',
     method: 'GET',
@@ -150,6 +187,43 @@ export const apis = [
           verify_status: 2,
         },
       ],
+    },
+  },
+  {
+    name: '根据文章链接搜索公众号',
+    description: '根据公众号文章链接查询公众号。',
+    url: '/api/public/v1/accountbyurl',
+    method: 'GET',
+    params: [
+      {
+        label: '文章链接',
+        name: 'url',
+        location: 'query',
+        required: true,
+        default: 'N/A',
+        type: 'String',
+        remark: '',
+      },
+    ],
+    responseSample: {
+      base_resp: {
+        ret: 0,
+        err_msg: 'ok',
+      },
+      list: [
+        {
+          fakeid: 'MzA3NTg4MDUzNQ==',
+          nickname: '肖小跑',
+          alias: '',
+          round_head_img:
+            'http://mmbiz.qpic.cn/mmbiz_png/TEq4bibSxYafowUFshRICokwNXiaUB9zCX3vicx8FuhTCGibTa478JI72bkbpa89ssAqEFm2ib1S1LB0FEjHycjib8OA/0?wx_fmt=png',
+          service_type: 1,
+          signature:
+            '金融世界不讲道理的时候，向文史哲求救，大概率“叮”的一下就扣上了。因为在这里，您才能再次看到“人”：人的情绪，人的荒诞，人的大举动小动作。这里有世界最本质的规律。',
+          verify_status: 0,
+        },
+      ],
+      total: 1,
     },
   },
   {
@@ -307,7 +381,7 @@ export const apis = [
     },
   },
   {
-    name: '获取文章内容 (开发中)',
+    name: '获取文章内容',
     description: '获取文章内容，支持 html / markdown / text 格式',
     url: '/api/public/v1/download',
     method: 'GET',
@@ -332,6 +406,34 @@ export const apis = [
       },
     ],
     responseSample: {},
+    remark: '此接口不需要 API 密钥',
+  },
+  {
+    name: '查询公众号主体信息 (beta)',
+    description: '根据公众号的 biz 查询主体信息',
+    url: '/api/public/beta/authorinfo',
+    method: 'GET',
+    params: [
+      {
+        label: '公众号id',
+        name: 'biz',
+        location: 'query',
+        required: true,
+        default: 'N/A',
+        type: 'String',
+        remark: '',
+      },
+    ],
+    responseSample: {
+      base_resp: {
+        exportkey_token: '',
+        ret: 0,
+      },
+      identity_name: '专心保险经纪有限公司',
+      is_verify: 2,
+      original_article_count: 3585,
+    },
+    remark: '此接口不需要 API 密钥',
   },
 ];
 
@@ -341,4 +443,4 @@ export const IMAGE_PROXY = '';
 
 // 转发微信公众号请求时，使用的 user-agent 字符串
 export const USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Wae/1.0';
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 WAE/1.0';

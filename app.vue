@@ -12,26 +12,12 @@
 <script setup lang="ts">
 import { ModuleRegistry } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
+import { isDev } from '~/config';
 
-const isDev = !import.meta.env.PROD;
 const runtimeConfig = useRuntimeConfig();
-
-const websiteID = runtimeConfig.public.umamiWebsiteID;
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 LicenseManager.setLicenseKey(runtimeConfig.public.aggridLicense);
-
-useHead({
-  script: [
-    websiteID
-      ? {
-          src: 'https://cloud.umami.is/script.js',
-          defer: true,
-          'data-website-id': websiteID,
-        }
-      : '',
-  ],
-});
 </script>
 
 <style>

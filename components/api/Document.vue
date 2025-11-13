@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import hljs from 'highlight.js/lib/core';
-import json from 'highlight.js/lib/languages/json';
-import 'highlight.js/styles/stackoverflow-dark.css';
-
-hljs.registerLanguage('json', json);
+import CodeSegment from '~/components/api/CodeSegment.vue';
 
 interface TParam {
   name: string;
@@ -25,24 +21,34 @@ interface Props {
   responseSample: any;
   remark?: string;
 }
-const props = defineProps<Props>();
+defineProps<Props>();
 
-const response_sample = computed(
-  () => hljs.highlight(JSON.stringify(props.responseSample, null, 2), { language: 'json' }).value
-);
 const open = ref(false);
+
+const host = window.location.protocol + '//' + window.location.host;
 </script>
 
 <template>
   <div class="space-y-5">
-    <h2 class="text-2xl font-semibold font-serif py-2">{{ index }}. {{ name }}</h2>
+    <h2 class="flex items-center space-x-3 text-2xl font-semibold font-serif py-2">
+      <span>{{ index }}. {{ name }}</span>
+      <ApiDebugModal :initial-selected="name" />
+    </h2>
+
     <div>
       <p class="font-semibold mb-2">简要描述</p>
       <p class="font-serif">{{ description }}</p>
     </div>
+    <div v-if="remark">
+      <p class="font-semibold mb-2">备注:</p>
+      <p class="text-rose-500">{{ remark }}</p>
+    </div>
     <div>
       <p class="font-semibold mb-2">请求URL:</p>
-      <p class="font-mono border p-2 rounded-md">{{ url }}</p>
+      <p class="font-mono border p-2 rounded-md">
+        <span class="text-gray-400">{{ host }}</span>
+        <span class="font-semibold">{{ url }}</span>
+      </p>
     </div>
     <div>
       <p class="font-semibold mb-2">请求方式:</p>
@@ -80,16 +86,9 @@ const open = ref(false);
     <div>
       <p class="font-semibold flex items-center mb-2">
         <span class="mr-3">返回示例:</span>
-        <UToggle v-model="open" color="fuchsia" on-icon="i-heroicons:eye" off-icon="i-heroicons:eye-slash" />
+        <UToggle v-model="open" color="blue" on-icon="i-heroicons:eye" off-icon="i-heroicons:eye-slash" />
       </p>
-      <pre
-        v-if="open"
-        class="bg-black text-gray-400 p-2 max-h-[664px] overflow-scroll no-scrollbar"
-      ><span v-html="response_sample"></span></pre>
-    </div>
-    <div v-if="remark">
-      <p class="font-semibold mb-2">备注:</p>
-      <p>{{ remark }}</p>
+      <CodeSegment v-if="open" :code="responseSample" lang="json" />
     </div>
   </div>
 </template>

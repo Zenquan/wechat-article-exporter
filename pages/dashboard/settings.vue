@@ -5,19 +5,23 @@
     </Teleport>
 
     <div class="h-full overflow-scroll">
-      <!--      <SettingCredential />-->
       <SettingProxy />
       <div class="flex flex-wrap">
         <SettingExport />
         <SettingMisc />
       </div>
+      <!--      <div>-->
+      <!--        <SettingDisplay />-->
+      <!--      </div>-->
       <div class="h-[30vh]"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { websiteName } from '~/config';
+
 useHead({
-  title: '设置 | 微信公众号文章导出',
+  title: `设置 | ${websiteName}`,
 });
 </script>

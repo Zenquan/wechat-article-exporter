@@ -1,18 +1,27 @@
-export interface CookieEntry {
-  key: string;
+import { type CookieEntity } from '~/server/utils/CookieStore';
+
+export type CookieKVKey = string;
+
+export interface CookieKVValue {
   token: string;
-  cookie: string;
+  cookies: CookieEntity[];
 }
 
-export async function getCookie(key: string): Promise<CookieEntry | null> {
+export async function setMpCookie(key: CookieKVKey, data: CookieKVValue): Promise<boolean> {
   const kv = useStorage('kv');
-  return await kv.get<CookieEntry>(`cookies:${key}`);
+  try {
+    await kv.set<CookieKVValue>(`cookie:${key}`, data, {
+      // https://developers.cloudflare.com/kv/api/write-key-value-pairs/#expiring-keys
+      expirationTtl: 60 * 60 * 24 * 4, // 4 days
+    });
+    return true;
+  } catch (err) {
+    console.error('kv.set call failed:', err);
+    return false;
+  }
 }
 
-export async function setCookie(cookie: CookieEntry) {
+export async function getMpCookie(key: CookieKVKey): Promise<CookieKVValue | null> {
   const kv = useStorage('kv');
-  await kv.set<CookieEntry>(`cookies:${cookie.key}`, cookie, {
-    expirationTtl: 60 * 60 * 24 * 3.8,
-  });
-  return true;
+  return await kv.get<CookieKVValue>(`cookie:${key}`);
 }

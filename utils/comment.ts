@@ -4,7 +4,7 @@ import { formatTimeStamp } from '~/utils';
 import { getMetadataCache } from '~/store/v2/metadata';
 
 /**
- * 渲染文章的留言内容
+ * 渲染文章的评论内容
  * @param url 文章链接
  */
 export async function renderComments(url: string) {
@@ -21,7 +21,7 @@ export async function renderComments(url: string) {
     }
 
     if (elected_comments.length > 0) {
-      // 留言总数
+      // 评论总数
       const metadata = await getMetadataCache(url);
       commentHTML += '<div style="max-width: 667px;margin: 0 auto;padding: 10px 10px 80px;">';
       commentHTML += `<p style="font-size: 15px;color: #949494;">留言 ${metadata?.commentNum}</p>`;

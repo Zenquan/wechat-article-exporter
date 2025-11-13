@@ -27,10 +27,18 @@ export function formatItemShowType(type: number) {
 }
 
 // 工具函数：将时长字符串转为秒数
-export function durationToSeconds(duration: string) {
+export function durationToSeconds(duration: string | undefined) {
   if (!duration) return 0;
   const [min, sec] = duration.split(':').map(Number);
   return min * 60 + sec;
+}
+
+export function formatNumber(num: any): string {
+  if (typeof num === 'number') {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  } else {
+    return num.toString();
+  }
 }
 
 /**
@@ -83,11 +91,11 @@ export async function downloadArticleHTML(articleURL: string, title?: string) {
     const $layout = document.querySelector('#js_fullscreen_layout_padding');
     if (!$jsContent) {
       if ($layout) {
-        console.log(`文章(${title})已被删除，跳过下载`);
+        console.warn(`文章(${title})已被删除，跳过下载`);
         return 0;
       }
 
-      console.log(`文章(${title})下载失败`);
+      console.warn(`文章(${title})下载失败`);
       throw new Error('下载失败，请重试');
     }
     html = fullHTML;
@@ -122,11 +130,11 @@ export async function downloadArticleHTMLs(articles: DownloadableArticle[], call
     const $layout = document.querySelector('#js_fullscreen_layout_padding');
     if (!$jsContent) {
       if ($layout) {
-        console.log(`文章(${article.title})已被删除，跳过下载`);
+        console.warn(`文章(${article.title})已被删除，跳过下载`);
         return 0;
       }
 
-      console.log(`文章(${article.title})下载失败`);
+      console.warn(`文章(${article.title})下载失败`);
       throw new Error('下载失败，请重试');
     }
 
@@ -885,13 +893,6 @@ export function formatElapsedTime(seconds: number): string {
   return result;
 }
 
-export function formatNum(n: number | undefined): string {
-  if (n === undefined) {
-    return '';
-  }
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
 export function maxLen(text: string, max = 35): string {
   if (text.length > max) {
     return text.slice(0, max) + '...';
@@ -925,6 +926,6 @@ export function bestConcurrencyCount(proxyCount: number): number {
 // 过滤文件名中的非法字符
 export function filterInvalidFilenameChars(input: string): string {
   // 只保留中文字符、英文字符、数字
-  const regex = /[^\u4e00-\u9fa5a-zA-Z0-9]/g;
-  return input.replace(regex, '').slice(0, 100).trim();
+  const regex = /[^\u4e00-\u9fa5a-zA-Z0-9()（）]/g;
+  return input.replace(regex, '_').slice(0, 100).trim();
 }

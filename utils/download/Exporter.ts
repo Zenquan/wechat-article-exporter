@@ -11,7 +11,7 @@ import { getResourceCache, updateResourceCache } from '~/store/v2/resource';
 import { getArticleByLink } from '~/store/v2/article';
 import { filterInvalidFilenameChars, sleep } from '~/utils';
 import usePreferences from '~/composables/usePreferences';
-import { getAllInfo, type Info } from '~/store/v2/info';
+import { getAccountNameByFakeid, getAllInfo, type Info } from '~/store/v2/info';
 import { getArticleComments, renderComments } from '~/utils/comment';
 import { type ExcelExportEntity, export2ExcelFile, export2JsonFile } from '~/utils/exporter';
 import TurndownService from 'turndown';
@@ -27,10 +27,10 @@ export class Exporter extends BaseDownload {
 
   // 导出的根目录
   private exportRootDirectoryHandle: FileSystemDirectoryHandle | null = null;
-  private readonly resources: Set<string>;
+  private readonly resources: Set<{ url: string; fakeid: string }>;
 
-  constructor(fakeid: string, urls: string[], options: DownloadOptions = {}) {
-    super(fakeid, urls, options);
+  constructor(urls: string[], options: DownloadOptions = {}) {
+    super(urls, options);
     this.resources = new Set();
   }
 
@@ -45,7 +45,7 @@ export class Exporter extends BaseDownload {
       try {
         await this.acquireExportDirectoryHandle();
       } catch (err) {
-        console.log(err);
+        console.error(err);
         return;
       }
     }
@@ -94,6 +94,11 @@ export class Exporter extends BaseDownload {
     const parser = new DOMParser();
 
     for (const url of this.urls) {
+      const article = await getArticleByLink(url);
+      if (!article) {
+        continue;
+      }
+
       const cached = await getHtmlCache(url);
       if (!cached) {
         console.warn(`文章(url: ${url} )的 html 还未下载，不能导出`);
@@ -112,7 +117,7 @@ export class Exporter extends BaseDownload {
         const imgUrl = img.getAttribute('src') || img.getAttribute('data-src');
         if (imgUrl) {
           resources.push(imgUrl);
-          this.resources.add(imgUrl);
+          this.resources.add({ url: imgUrl, fakeid: article.fakeid });
         }
       }
 
@@ -122,7 +127,7 @@ export class Exporter extends BaseDownload {
         const url = link.href;
         if (url) {
           resources.push(url);
-          this.resources.add(url);
+          this.resources.add({ url: url, fakeid: article.fakeid });
         }
       }
 
@@ -131,15 +136,15 @@ export class Exporter extends BaseDownload {
         /((?:background|background-image): url\((?:&quot;)?)((?:https?|\/\/)[^)]+?)((?:&quot;)?\))/gs,
         (_, p1, url, p3) => {
           resources.push(url);
-          this.resources.add(url);
+          this.resources.add({ url: url, fakeid: article.fakeid });
           return `${p1}${url}${p3}`;
         }
       );
 
       await updateResourceMapCache({
-        fakeid: this.fakeid,
+        fakeid: article.fakeid,
         url: url,
-        resources: [...new Set(resources)],
+        resources: resources,
       });
     }
   }
@@ -147,16 +152,16 @@ export class Exporter extends BaseDownload {
   // 处理导出任务队列
   private async processExportQueue() {
     const activePromises: Promise<any>[] = [];
-    const urls = [...this.resources];
+    const resources = [...this.resources];
 
-    while (urls.length > 0 || activePromises.length > 0) {
+    while (resources.length > 0 || activePromises.length > 0) {
       // 检查是否需要启动新的下载任务，需同时满足以下两点:
       // - 没有达到并发量限制
       // - 还有更多 URL 需要下载
-      while (activePromises.length < this.options.concurrency && urls.length > 0) {
+      while (activePromises.length < this.options.concurrency && resources.length > 0) {
         // 启动新的下载任务
-        const url: string = urls.pop()!;
-        const promise = this.downloadResourceTask(url);
+        const resource: { url: string; fakeid: string } = resources.pop()!;
+        const promise = this.downloadResourceTask(resource.url, resource.fakeid);
         activePromises.push(promise);
         promise.finally(() => {
           const index = activePromises.indexOf(promise);
@@ -165,7 +170,7 @@ export class Exporter extends BaseDownload {
           }
 
           // 下载任务结束，触发通知
-          this.emit('export:download:progress', url, this.completed.has(url), this.getStatus());
+          this.emit('export:download:progress', resource.url, this.completed.has(resource.url), this.getStatus());
         });
       }
 
@@ -177,10 +182,10 @@ export class Exporter extends BaseDownload {
   }
 
   // 下载资源任务
-  private async downloadResourceTask(url: string): Promise<void> {
+  private async downloadResourceTask(url: string, fakeid: string): Promise<void> {
     this.pending.add(url);
 
-    // html 下载时，需要检查缓存是否可用，避免重复下载相同 html 内容
+    // 检查缓存是否可用，避免重复下载相同资源
     const cached = await getResourceCache(url);
     if (cached) {
       this.pending.delete(url);
@@ -192,9 +197,9 @@ export class Exporter extends BaseDownload {
       const proxy = this.proxyManager.getBestProxy();
 
       try {
-        const blob = await this.download(url, proxy);
+        const blob = await this.download(fakeid, url, proxy);
         await updateResourceCache({
-          fakeid: this.fakeid,
+          fakeid: fakeid,
           url: url,
           file: blob,
         });
@@ -221,10 +226,11 @@ export class Exporter extends BaseDownload {
 
     for (let i = 0; i < total; i++) {
       const url = this.urls[i];
-      console.log(`(${i + 1}/${total})开始导出: ${url}`);
+      console.debug(`(${i + 1}/${total})开始导出: ${url}`);
 
       const article = await getArticleByLink(url);
-      const exportedArticle: ExcelExportEntity = { ...article };
+      const accountName = await getAccountNameByFakeid(article.fakeid);
+      const exportedArticle: ExcelExportEntity = { ...article, _accountName: accountName };
       if (preferences.value.exportConfig.exportExcelIncludeContent) {
         exportedArticle.content = await this.getPureContent(url, 'text', parser);
       }
@@ -257,7 +263,9 @@ export class Exporter extends BaseDownload {
       console.log(`(${i + 1}/${total})开始导出: ${url}`);
 
       const article = await getArticleByLink(url);
-      const exportedArticle: ExcelExportEntity = { ...article };
+      const accountName = await getAccountNameByFakeid(article.fakeid);
+      const exportedArticle: ExcelExportEntity = { ...article, _accountName: accountName };
+
       if (preferences.value.exportConfig.exportJsonIncludeContent) {
         exportedArticle.content = await this.getPureContent(url, 'text', parser);
       }
@@ -433,6 +441,12 @@ export class Exporter extends BaseDownload {
     } else {
       return '';
     }
+  }
+
+  static async getHtmlContent(url: string) {
+    const parser = new DOMParser();
+    const exporter = new Exporter([]);
+    return exporter.getPureContent(url, 'html', parser);
   }
 
   // 调整最终的 html
@@ -782,27 +796,5 @@ ${commentHTML}
     dirnameTpl = dirnameTpl.replace(/\$\{HH}/g, articleUpdateTime.format('HH'));
     dirnameTpl = dirnameTpl.replace(/\$\{mm}/g, articleUpdateTime.format('mm'));
     return dirnameTpl;
-  }
-
-  // 导出调试数据
-  public async exportDebugInfo(): Promise<void> {
-    const debugs = await getDebugInfo();
-    const total = debugs.length;
-    console.log(`总共${total}条调试数据`);
-    for (let i = 0; i < total; i++) {
-      const asset = debugs[i];
-      console.log(`(${i + 1}/${total})开始导出: ${asset.title}`);
-      await this.writeFile(asset.type + '_' + filterInvalidFilenameChars(asset.title) + '.html', asset.file);
-    }
-
-    alert('导出完成');
-  }
-
-  public async debug() {
-    await this.acquireExportDirectoryHandle();
-    await this.writeFile(
-      filterInvalidFilenameChars('假如苹果来发布新款C++...') + '/a.html',
-      new Blob(['hello'], { type: 'text/plain' })
-    );
   }
 }

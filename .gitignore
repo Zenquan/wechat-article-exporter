@@ -17,10 +17,14 @@ logs
 .DS_Store
 .fleet
 .idea
+debug
 design
-nuxt-options.json
+docs
 
 # Local env files
 .env
 .env.*
 !.env.example
+
+# wrangler
+.wrangler

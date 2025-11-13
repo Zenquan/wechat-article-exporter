@@ -17,7 +17,7 @@ import GridStatusBar from '~/components/grid/StatusBar.vue';
 import GridCoverTooltip from '~/components/grid/CoverTooltip.vue';
 import { AG_GRID_LOCALE_CN } from '@ag-grid-community/locale';
 import { type Info } from '~/store/v2/info';
-import { getArticleCache, articleDeleted } from '~/store/v2/article';
+import { getArticleCache, articleDeleted, getArticleByLink } from '~/store/v2/article';
 import type { AppMsgEx } from '~/types/types';
 import { formatElapsedTime, formatTimeStamp, sleep, ITEM_SHOW_TYPE, durationToSeconds } from '~/utils';
 import { Downloader } from '~/utils/download/Downloader';
@@ -27,8 +27,9 @@ import { getCommentCache } from '~/store/v2/comment';
 import type { ArticleMetadata, DownloaderStatus, ExporterStatus } from '~/utils/download/types';
 import { getMetadataCache, type Metadata } from '~/store/v2/metadata';
 import type { PreviewArticle } from '#components';
-import TurndownService from 'turndown';
 import type { Preferences } from '~/types/preferences';
+import AccountSelectorForArticle from '~/components/selector/AccountSelectorForArticle.vue';
+import { isDev } from '~/config';
 
 let globalRowData: Article[] = [];
 
@@ -385,7 +386,6 @@ function onFilterChanged(event: FilterChangedEvent) {
   event.api.deselectAll();
 }
 
-const isDev = !import.meta.env.PROD;
 const preferences = usePreferences();
 const hideDeleted = computed(() => (preferences.value as unknown as Preferences).hideDeleted);
 
@@ -492,9 +492,9 @@ async function downloadArticleHTML() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Downloader(selectedAccount.value!.fakeid, urls);
+  const manager = new Downloader(urls);
   manager.on('download:progress', (url: string, success: boolean, status: DownloaderStatus) => {
-    console.log(
+    console.debug(
       `进度: (进行中:${status.pending.length} / 已完成:${status.completed.length} / 已失败:${status.failed.length} / 已删除:${status.deleted.length})`
     );
     progress_1.value = status.completed.length;
@@ -525,12 +525,12 @@ async function downloadArticleHTML() {
     }
   });
   manager.on('download:begin', () => {
-    console.log('开始抓取【文章内容】...');
+    console.debug('开始抓取【文章内容】...');
     progress_1.value = 0;
     progress_2.value = urls.length;
   });
   manager.on('download:finish', (seconds: number, status: DownloaderStatus) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -561,9 +561,9 @@ async function downloadArticleMetadata() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Downloader(selectedAccount.value!.fakeid, urls);
+  const manager = new Downloader(urls);
   manager.on('download:progress', (url: string, success: boolean, status: DownloaderStatus) => {
-    console.log(
+    console.debug(
       `进度: (进行中:${status.pending.length} / 已完成:${status.completed.length} / 已失败:${status.failed.length} / 已删除:${status.deleted.length})`
     );
     progress_1.value = status.completed.length;
@@ -598,12 +598,12 @@ async function downloadArticleMetadata() {
     }
   });
   manager.on('download:begin', () => {
-    console.log('开始抓取【阅读量】...');
+    console.debug('开始抓取【阅读量】...');
     progress_1.value = 0;
     progress_2.value = urls.length;
   });
   manager.on('download:finish', (seconds: number, status: DownloaderStatus) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -634,9 +634,9 @@ async function downloadArticleComment() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Downloader(selectedAccount.value!.fakeid, urls);
+  const manager = new Downloader(urls);
   manager.on('download:progress', (url: string, success: boolean, status: DownloaderStatus) => {
-    console.log(
+    console.debug(
       `进度: (进行中:${status.pending.length} / 已完成:${status.completed.length} / 已失败:${status.failed.length} / 已删除:${status.deleted.length})`
     );
     progress_1.value = status.completed.length;
@@ -651,12 +651,12 @@ async function downloadArticleComment() {
     }
   });
   manager.on('download:begin', () => {
-    console.log('开始抓取【留言内容】...');
+    console.debug('开始抓取【留言内容】...');
     progress_1.value = 0;
     progress_2.value = urls.length;
   });
   manager.on('download:finish', (seconds: number, status: DownloaderStatus) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -690,7 +690,7 @@ async function export2excel() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '导出中';
     progress_1.value = 0;
@@ -703,7 +703,7 @@ async function export2excel() {
     progress_1.value = num;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -734,7 +734,7 @@ async function export2json() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '导出中';
     progress_1.value = 0;
@@ -747,7 +747,7 @@ async function export2json() {
     progress_1.value = num;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -778,7 +778,7 @@ async function export2html() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '资源解析中';
     progress_1.value = 0;
@@ -801,7 +801,7 @@ async function export2html() {
     progress_1.value = index;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -832,7 +832,7 @@ async function export2txt() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '资源解析中';
     progress_1.value = 0;
@@ -847,7 +847,7 @@ async function export2txt() {
     progress_1.value = index;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -878,7 +878,7 @@ async function export2markdown() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '资源解析中';
     progress_1.value = 0;
@@ -893,7 +893,7 @@ async function export2markdown() {
     progress_1.value = index;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -924,7 +924,7 @@ async function export2word() {
 
   const urls: string[] = selectedRows.map(article => article.link);
 
-  const manager = new Exporter(selectedAccount.value!.fakeid, urls);
+  const manager = new Exporter(urls);
   manager.on('export:begin', () => {
     exportPhase.value = '资源解析中';
     progress_1.value = 0;
@@ -939,7 +939,7 @@ async function export2word() {
     progress_1.value = index;
   });
   manager.on('export:finish', (seconds: number) => {
-    console.log('耗时:', formatElapsedTime(seconds));
+    console.debug('耗时:', formatElapsedTime(seconds));
     toast.add({
       id: 'update_downloaded',
       color: 'purple',
@@ -961,18 +961,15 @@ async function export2word() {
 }
 
 async function debug() {
-  const turndownService = new TurndownService();
-  const markdown = turndownService.turndown('<h1>Hello world!</h1>');
-  console.log(markdown);
+  const article = await getArticleByLink('https://mp.weixin.qq.com/s/8sCrH6AZyyff5dVXQAzVFQ');
+  console.log(article);
 }
 </script>
 
 <template>
   <div class="h-full">
     <Teleport defer to="#title">
-      <h1 class="text-[28px] leading-[34px] text-slate-12 dark:text-slate-50 font-bold">
-        文章 <span class="text-sm text-slate-10">本地已缓存文章</span>
-      </h1>
+      <h1 class="text-[28px] leading-[34px] text-slate-12 dark:text-slate-50 font-bold">文章下载</h1>
     </Teleport>
 
     <div class="flex flex-col h-full divide-y divide-gray-200">
@@ -980,7 +977,7 @@ async function debug() {
       <header class="flex flex-col items-start 2xl:flex-row 2xl:items-center gap-2 2xl:justify-between px-3 py-2">
         <div class="flex flex-col xl:flex-row gap-2">
           <div class="flex space-x-3">
-            <AccountSelectorForArticle v-model="selectedAccount" class="w-60" />
+            <AccountSelectorForArticle v-model="selectedAccount" class="w-80" />
           </div>
         </div>
         <div class="flex items-center space-x-2">

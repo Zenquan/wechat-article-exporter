@@ -3,5 +3,5 @@ navigateTo('/dashboard/account');
 </script>
 
 <template>
-  <div></div>
+  <div class="flex justify-center items-center w-full h-full">loading...</div>
 </template>

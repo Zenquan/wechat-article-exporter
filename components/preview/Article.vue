@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import type { AppMsgEx } from '~/types/types';
-import HtmlRenderer from '~/components/HtmlRenderer.vue';
+import HtmlRenderer from '~/components/preview/HtmlRenderer.vue';
 import { getHtmlCache, type HtmlAsset } from '~/store/v2/html';
 import type { Preferences } from '~/types/preferences';
 import usePreferences from '~/composables/usePreferences';

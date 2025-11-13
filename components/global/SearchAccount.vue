@@ -12,7 +12,6 @@
             v-for="account in accountList"
             :key="account.fakeid"
             class="flex items-center px-2 py-4 hover:bg-slate-50 hover:cursor-pointer"
-            :class="{ active: account.fakeid === activeAccount?.fakeid }"
             @click="selectAccount(account)"
           >
             <img class="size-20 mr-2" :src="account.round_head_img" alt="" />
@@ -39,7 +38,7 @@
           class="block mx-auto my-2 h-10 px-6 font-semibold rounded-md border border-slate-200 text-slate-900 dark:text-slate-300 hover:border-slate-400"
           type="button"
         >
-          下一页
+          加载更多
         </button>
       </div>
     </div>
@@ -52,9 +51,6 @@ import { Loader } from 'lucide-vue-next';
 import { getAccountList } from '~/apis';
 import type { AccountInfo } from '~/types/types';
 import LoginModal from '~/components/modal/Login.vue';
-
-const loginAccount = useLoginAccount();
-const activeAccount = useActiveAccount();
 
 const toast = useToast();
 const modal = useModal();
@@ -90,7 +86,7 @@ async function loadData() {
   loading.value = true;
 
   try {
-    const [accounts, completed] = await getAccountList(loginAccount.value?.token, begin, accountQuery.value);
+    const [accounts, completed] = await getAccountList(begin, accountQuery.value);
     accountList.push(...accounts);
     begin += ACCOUNT_LIST_PAGE_SIZE;
     noMoreData.value = completed;

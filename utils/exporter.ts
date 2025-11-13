@@ -3,11 +3,13 @@ import { saveAs } from 'file-saver';
 import type { AppMsgEx } from '~/types/types';
 import type { ArticleMetadata } from '~/utils/download/types';
 import { formatTimeStamp, ITEM_SHOW_TYPE } from '~/utils';
+import type { AccountManifest } from '~/types/account';
 
 export type ExcelExportEntity = AppMsgEx &
   Partial<ArticleMetadata> & {
     content?: string;
     comments?: any[];
+    _accountName: string | null;
   };
 
 // 导出为 excel 文件
@@ -18,6 +20,7 @@ export async function export2ExcelFile(data: ExcelExportEntity[], filename: stri
 
   // 设置表头
   worksheet.columns = [
+    { header: '公众号', key: '_accountName', width: 20 },
     { header: 'ID', key: 'aid', width: 20 },
     { header: '链接', key: 'link', width: 50 },
     { header: '标题', key: 'title', width: 80 },
@@ -40,6 +43,7 @@ export async function export2ExcelFile(data: ExcelExportEntity[], filename: stri
   // 添加数据
   data.forEach(item => {
     worksheet.addRow({
+      _accountName: item._accountName,
       aid: item.aid,
       link: item.link,
       title: item.title,
@@ -68,6 +72,12 @@ export async function export2ExcelFile(data: ExcelExportEntity[], filename: stri
 
 // 导出为 json 文件
 export async function export2JsonFile(data: ExcelExportEntity[], filename: string) {
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  saveAs(blob, `${filename}.json`);
+}
+
+// 导出公众号数据
+export async function exportAccountJsonFile(data: AccountManifest, filename: string) {
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   saveAs(blob, `${filename}.json`);
 }

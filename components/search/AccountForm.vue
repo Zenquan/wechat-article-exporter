@@ -7,7 +7,7 @@
       v-model="query"
       size="md"
       :trailing="false"
-      placeholder="搜索公众号名称或biz号码"
+      placeholder="搜索公众号名称"
     />
   </form>
 </template>

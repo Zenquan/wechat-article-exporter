@@ -1,7 +1,7 @@
 <template>
   <div class="h-full">
     <Teleport defer to="#title">
-      <h1 class="text-[28px] leading-[34px] text-slate-12 dark:text-slate-50 font-bold">合集</h1>
+      <h1 class="text-[28px] leading-[34px] text-slate-12 dark:text-slate-50 font-bold">合集下载</h1>
     </Teleport>
 
     <div class="flex flex-col h-full divide-y divide-gray-200">
@@ -129,9 +129,11 @@ import { vElementVisibility } from '@vueuse/components';
 import { useDownloadAlbum } from '~/composables/useBatchDownload';
 import { formatAlbumTime } from '~/utils/album';
 import { gotoLink, sleep } from '~/utils';
+import { websiteName } from '~/config';
+import AccountSelectorForAlbum from '~/components/selector/AccountSelectorForAlbum.vue';
 
 useHead({
-  title: '合集链接 | 微信公众号文章导出',
+  title: `合集下载 | ${websiteName}`,
 });
 
 interface AccountInfo extends Info {
@@ -191,7 +193,7 @@ async function getFirstPageAlbumData(refreshPage = true) {
     (controller.value as AbortController).abort('切换tab，取消pending中的请求');
   }
   controller.value = new AbortController();
-  const data = await $fetch<AppMsgAlbumResult>('/api/appmsgalbum', {
+  const data = await $fetch<AppMsgAlbumResult>('/api/web/misc/appmsgalbum', {
     method: 'GET',
     query: {
       fakeid: selectedAccount.value!.fakeid,
@@ -244,7 +246,7 @@ async function loadMoreData() {
   controller.value = new AbortController();
 
   const lastArticle = albumArticles[albumArticles.length - 1];
-  const data = await $fetch<AppMsgAlbumResult>('/api/appmsgalbum', {
+  const data = await $fetch<AppMsgAlbumResult>('/api/web/misc/appmsgalbum', {
     method: 'GET',
     query: {
       fakeid: selectedAccount.value!.fakeid,

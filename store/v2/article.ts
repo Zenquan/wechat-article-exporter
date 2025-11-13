@@ -1,10 +1,8 @@
-import type { AppMsgEx, PublishInfo, PublishPage } from '~/types/types';
+import type { PublishInfo, PublishPage, AppMsgExWithFakeID } from '~/types/types';
 import { db } from './db';
 import { type Info, updateInfoCache } from './info';
 
-export type ArticleAsset = AppMsgEx & {
-  fakeid: string;
-};
+export type ArticleAsset = AppMsgExWithFakeID;
 
 /**
  * 更新文章缓存
@@ -72,7 +70,7 @@ export async function hitCache(fakeid: string, create_time: number): Promise<boo
  * @param fakeid 公众号id
  * @param create_time 创建时间
  */
-export async function getArticleCache(fakeid: string, create_time: number): Promise<AppMsgEx[]> {
+export async function getArticleCache(fakeid: string, create_time: number): Promise<AppMsgExWithFakeID[]> {
   return db.article
     .where('fakeid')
     .equals(fakeid)
@@ -85,10 +83,10 @@ export async function getArticleCache(fakeid: string, create_time: number): Prom
  * 根据 url 获取文章对象
  * @param url
  */
-export async function getArticleByLink(url: string): Promise<AppMsgEx & { fakeid: string }> {
+export async function getArticleByLink(url: string): Promise<AppMsgExWithFakeID> {
   const article = await db.article.where('link').equals(url).first();
   if (!article) {
-    throw new Error('Article does not exist');
+    throw new Error(`Article(${url}) does not exist`);
   }
   return article;
 }

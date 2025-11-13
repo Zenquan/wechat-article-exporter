@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Info } from '~/store/v2/info';
+import { useEventBus } from '@vueuse/core';
+import { importInfos, type Info } from '~/store/v2/info';
 import GlobalSearchAccount from '~/components/global/SearchAccount.vue';
-import type { AccountInfo } from '~/types/types';
 import { AgGridVue } from 'ag-grid-vue3';
 import {
   type ColDef,
@@ -28,11 +28,16 @@ import GridLoadProgress from '~/components/grid/LoadProgress.vue';
 import ConfirmModal from '~/components/modal/Confirm.vue';
 import LoginModal from '~/components/modal/Login.vue';
 import { formatTimeStamp } from '~/utils';
-import StorageUsage from '~/components/StorageUsage.vue';
 import type { Preferences } from '~/types/preferences';
+import dayjs from 'dayjs';
+import { IMAGE_PROXY, websiteName } from '~/config';
+import toastFactory from '~/composables/toast';
+import { exportAccountJsonFile } from '~/utils/exporter';
+import type { AccountManifest } from '~/types/account';
+import type { AccountEvent } from '~/types/events';
 
 useHead({
-  title: '公众号管理 | 微信公众号文章导出',
+  title: `公众号管理 | ${websiteName}`,
 });
 
 interface PromiseInstance {
@@ -40,23 +45,22 @@ interface PromiseInstance {
   reject: (reason?: any) => void;
 }
 
-const toast = useToast();
+const toast = toastFactory();
 const modal = useModal();
 
 const preferences = usePreferences();
 const loginAccount = useLoginAccount();
+// 账号事件总线，用于和 Credentials 面板保持列表同步
+const accountEventBus = useEventBus<AccountEvent>('account-event');
+const stopAccountEvent = accountEventBus.on(event => {
+  if (event.type === 'account-added' || event.type === 'account-removed') {
+    refresh();
+  }
+});
 
 const searchAccountRef = ref<typeof GlobalSearchAccount | null>(null);
 
-function showToast(title: string, description: string) {
-  toast.add({
-    color: 'rose',
-    title: title,
-    description: description,
-    icon: 'i-octicon:bell-24',
-  });
-}
-
+// 检查是否有登录信息
 function checkLogin() {
   if (loginAccount.value === null) {
     modal.open(LoginModal);
@@ -76,10 +80,36 @@ async function onSelectAccount(account: Info) {
   await loadAccountArticle(account, false);
   await refresh();
   addBtnLoading.value = false;
+  toast.success('公众号添加成功', `已成功添加公众号【${account.nickname}】，并拉取了第一页文章数据`);
+  // 通知 Credentials 面板按钮立即变更为“已添加”
+  accountEventBus.emit({ type: 'account-added', fakeid: account.fakeid });
 }
 
 const isCanceled = ref(false);
 const timer = ref<number | null>(null);
+
+const syncToTimestamp = computed(() => {
+  const syncDateRange = (preferences.value as unknown as Preferences).syncDateRange;
+  switch (syncDateRange) {
+    case '1d':
+      return dayjs().subtract(1, 'days').unix();
+    case '3d':
+      return dayjs().subtract(3, 'days').unix();
+    case '7d':
+      return dayjs().subtract(7, 'days').unix();
+    case '1m':
+      return dayjs().subtract(1, 'months').unix();
+    case '3m':
+      return dayjs().subtract(3, 'months').unix();
+    case '6m':
+      return dayjs().subtract(6, 'months').unix();
+    case '1y':
+      return dayjs().subtract(1, 'years').unix();
+    case 'all':
+    default:
+      return 0;
+  }
+});
 
 async function _load(account: Info, begin: number, loadMore: boolean, promise: PromiseInstance) {
   if (isCanceled.value) {
@@ -91,7 +121,7 @@ async function _load(account: Info, begin: number, loadMore: boolean, promise: P
   syncingRowId.value = account.fakeid;
   isSyncing.value = true;
 
-  const [articles, completed] = await getArticleList(account, loginAccount.value?.token, begin);
+  const [articles, completed] = await getArticleList(account, begin);
   if (isCanceled.value) {
     isCanceled.value = false;
     promise.reject(new Error('已取消'));
@@ -110,7 +140,7 @@ async function _load(account: Info, begin: number, loadMore: boolean, promise: P
 
   // 加载可用的缓存
   const lastArticle = articles.at(-1);
-  if (lastArticle) {
+  if (lastArticle && lastArticle.create_time < account.last_update_time!) {
     // 检查是否存在比 lastArticle 更早的缓存数据
     if (await hitCache(account.fakeid, lastArticle.create_time)) {
       const cachedArticles = await getArticleCache(account.fakeid, lastArticle.create_time);
@@ -118,14 +148,24 @@ async function _load(account: Info, begin: number, loadMore: boolean, promise: P
       // 更新 begin 参数
       const count = cachedArticles.filter(article => article.itemidx === 1).length;
       begin += count;
+      articles.push(...cachedArticles);
     }
   }
+  if (articles.at(-1)!.create_time < syncToTimestamp.value) {
+    // 已同步到配置的时间范围
+    await updateRow(account.fakeid);
+    syncingRowId.value = null;
+    isSyncing.value = false;
+    promise.resolve(account);
+    return;
+  }
+
   await updateRow(account.fakeid);
   if (loadMore) {
     timer.value = window.setTimeout(
       () => {
         if (isCanceled.value) {
-          console.log('已取消');
+          console.warn('已取消');
           isCanceled.value = false;
           promise.reject(new Error('已取消'));
           return;
@@ -169,8 +209,9 @@ async function loadSelectedAccountArticle() {
     for (const account of rows) {
       await loadAccountArticle(account);
     }
+    toast.success(`已成功同步 ${rows.length} 个公众号`);
   } catch (e: any) {
-    showToast('加载失败', e.message);
+    toast.error('加载失败', e.message);
   }
 }
 
@@ -217,7 +258,7 @@ const columnDefs = ref<ColDef[]>([
     sortable: false,
     filter: false,
     cellRenderer: (params: ICellRendererParams) => {
-      return `<img alt="" src="${params.value}" style="height: 30px; width: 30px; object-fit: cover;" />`;
+      return `<img alt="" src="${IMAGE_PROXY + params.value}" style="height: 30px; width: 30px; object-fit: cover; border: 1px solid #e5e7eb; border-radius: 100%;" />`;
     },
     cellClass: 'flex justify-center items-center',
     minWidth: 80,
@@ -328,10 +369,10 @@ const columnDefs = ref<ColDef[]>([
         isCanceled.value = false;
         loadAccountArticle(params.data)
           .then(() => {
-            showToast('加载完成', `公众号(${params.data.nickname})的数据已加载完毕`);
+            toast.success('同步完成', `公众号【${params.data.nickname}】的文章已同步完毕`);
           })
           .catch(e => {
-            showToast('加载失败', e.message);
+            toast.error('同步失败', e.message);
           });
       },
       onStop: (params: ICellRendererParams) => {
@@ -376,16 +417,6 @@ const gridOptions: GridOptions = {
           suppressValues: true,
           suppressPivotMode: true,
         },
-      },
-      {
-        id: 'filters',
-        labelDefault: 'Filters',
-        labelKey: 'filters',
-        iconKey: 'filter',
-        toolPanel: 'agFiltersToolPanel',
-        minWidth: 180,
-        maxWidth: 400,
-        width: 250,
       },
     ],
     position: 'right',
@@ -492,12 +523,89 @@ function deleteSelectedAccounts() {
       try {
         isDeleting.value = true;
         await deleteAccountData(ids);
+        // 通知 Credentials 面板这些公众号已被移除
+        ids.forEach(fakeid => accountEventBus.emit({ type: 'account-removed', fakeid }));
       } finally {
         isDeleting.value = false;
         await refresh();
       }
     },
   });
+}
+
+onBeforeUnmount(() => {
+  stopAccountEvent();
+});
+
+// 导入公众号
+const fileRef = ref<HTMLInputElement | null>(null);
+const importBtnLoading = ref(false);
+function importAccount() {
+  fileRef.value!.click();
+}
+async function handleFileChange(evt: Event) {
+  const files = (evt.target as HTMLInputElement).files;
+  if (files && files.length > 0) {
+    const file = files[0];
+
+    try {
+      importBtnLoading.value = true;
+
+      // 使用 FileReader 读取文件内容
+      const fileContent = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          if (typeof e.target?.result === 'string') {
+            resolve(e.target.result);
+          } else {
+            reject(new Error('读取文件失败'));
+          }
+        };
+        reader.onerror = () => reject(new Error('读取文件失败'));
+        reader.readAsText(file, 'UTF-8');
+      });
+
+      // 解析 JSON
+      const jsonData = JSON.parse(fileContent);
+      if (jsonData.usefor !== 'wechat-article-exporter') {
+        // 文件格式不正确
+        toast.error('导入公众号失败', '导入文件格式不正确，请选择该网站导出的文件进行导入。');
+        return;
+      }
+      const infos = jsonData.accounts;
+      if (!infos || infos.length <= 0) {
+        // 文件格式不正确
+        toast.error('导入公众号失败', '导入文件格式不正确，请选择该网站导出的文件进行导入。');
+        return;
+      }
+
+      await importInfos(infos);
+      await refresh();
+    } catch (error) {
+      console.error('导入公众号时 JSON 解析失败:', error);
+      toast.error('导入公众号', (error as Error).message);
+    } finally {
+      importBtnLoading.value = false;
+    }
+  }
+}
+
+// 导出公众号
+const exportBtnLoading = ref(false);
+function exportAccount() {
+  exportBtnLoading.value = true;
+  try {
+    const rows = getSelectedRows();
+    const data: AccountManifest = {
+      version: '1.0',
+      usefor: 'wechat-article-exporter',
+      accounts: rows,
+    };
+    exportAccountJsonFile(data, '公众号');
+    toast.success('导出公众号', `成功导出了 ${rows.length} 个公众号`);
+  } finally {
+    exportBtnLoading.value = false;
+  }
 }
 </script>
 
@@ -510,27 +618,40 @@ function deleteSelectedAccounts() {
     <div class="flex flex-col h-full divide-y divide-gray-200">
       <!-- 顶部操作区 -->
       <header class="flex items-center gap-3 px-3 py-3">
-        <UButton color="blue" :disabled="isDeleting || addBtnLoading" @click="addAccount">{{
-          addBtnLoading ? '添加中...' : '添加公众号'
-        }}</UButton>
+        <UButton icon="i-lucide:user-plus" color="blue" :disabled="isDeleting || addBtnLoading" @click="addAccount">
+          {{ addBtnLoading ? '添加中...' : '添加' }}
+        </UButton>
+        <UButton icon="i-lucide:arrow-down-to-line" color="blue" :loading="importBtnLoading" @click="importAccount">
+          批量导入
+          <input ref="fileRef" type="file" accept=".json" class="hidden" @change="handleFileChange" />
+        </UButton>
+        <UButton
+          icon="i-lucide:arrow-up-from-line"
+          color="blue"
+          :loading="exportBtnLoading"
+          :disabled="!hasSelectedRows"
+          @click="exportAccount"
+        >
+          批量导出
+        </UButton>
         <UButton
           color="rose"
-          icon="i-heroicons:trash"
+          icon="i-lucide:user-minus"
+          class="disabled:opacity-35"
           :loading="isDeleting"
           :disabled="!hasSelectedRows"
           @click="deleteSelectedAccounts"
-          >删除所选公众号</UButton
+          >删除</UButton
         >
-        <UChip text="pro" size="xl" color="fuchsia">
-          <UButton
-            color="blue"
-            icon="i-heroicons:arrow-path-rounded-square-20-solid"
-            :loading="isSyncing"
-            :disabled="isDeleting || !hasSelectedRows"
-            @click="loadSelectedAccountArticle"
-            >同步所选公众号</UButton
-          >
-        </UChip>
+        <UButton
+          color="black"
+          icon="i-heroicons:arrow-path-rounded-square-20-solid"
+          class="disabled:opacity-35"
+          :loading="isSyncing"
+          :disabled="isDeleting || !hasSelectedRows"
+          @click="loadSelectedAccountArticle"
+          >同步</UButton
+        >
       </header>
 
       <!-- 数据表格 -->

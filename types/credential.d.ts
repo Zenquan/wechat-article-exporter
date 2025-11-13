@@ -1,5 +1,6 @@
 export interface ParsedCredential {
   nickname?: string;
+  avatar?: string;
   biz: string;
   uin: string;
   key: string;
@@ -8,4 +9,5 @@ export interface ParsedCredential {
   timestamp: number;
   time?: string;
   valid: boolean;
+  added?: boolean;
 }

@@ -1,16 +1,8 @@
 export interface LoginAccount {
-  uuid: string;
-  token: string;
   nickname: string;
   avatar: string;
-  fakeid: string;
   expires: string;
   err?: string;
-}
-
-export interface LoginInfoResult {
-  nick_name: string;
-  head_img: string;
 }
 
 export interface BaseResp {
@@ -20,6 +12,12 @@ export interface BaseResp {
 
 export interface StartLoginResult {
   base_resp: BaseResp;
+}
+
+export interface GetAuthKeyResult {
+  code: number;
+  data: string;
+  msg: string;
 }
 
 export interface ScanLoginResult {
@@ -172,6 +170,10 @@ export interface AppMsgEx {
   update_time: number;
 }
 
+export type AppMsgExWithFakeID = AppMsgEx & {
+  fakeid: string;
+};
+
 export interface DownloadableArticle {
   fakeid: string;
   title: string;
@@ -186,10 +188,39 @@ export interface LogoutResponse {
   statusText: string;
 }
 
-export interface ArticleTaskInfo {
-  title: string;
-  url: string;
-  aid: string;
-  fakeid: string;
-  date: number;
+export interface PostSwitchAccResponse {
+  base_resp: BaseResp;
+  data: any;
+}
+export interface SwitchAccResponse {
+  base_resp: BaseResp;
+  order: number;
+  status: number;
+  scan_login_ctx: ScanLoginCtx;
+  biz_list: ServiceBizList;
+  service_biz_list: ServiceBizList;
+  wxa_biz_list: ServiceBizList;
+  wxproduct_biz_list: ServiceBizList;
+}
+
+interface ScanLoginCtx {
+  account_switch_permit: 0 | 1;
+}
+
+export interface ServiceBizListItem {
+  order_type: number;
+  acct_type: number;
+  bizuin: number;
+  headimgurl: string;
+  is_admin: 0 | 1;
+  is_test_acct: boolean;
+  last_login_time: number;
+  link_time: number;
+  nickname: string;
+  username: string;
+}
+interface ServiceBizList {
+  length: number;
+  list: ServiceBizListItem[];
+  order_type: number;
 }

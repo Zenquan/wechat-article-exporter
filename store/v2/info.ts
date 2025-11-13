@@ -15,6 +15,9 @@ export interface Info {
   total_count: number;
   create_time?: number;
   update_time?: number;
+
+  // 最后更新时间
+  last_update_time?: number;
 }
 
 /**
@@ -52,6 +55,17 @@ export async function updateInfoCache(info: Info): Promise<boolean> {
   });
 }
 
+export async function updateLastUpdateTime(fakeid: string): Promise<boolean> {
+  return db.transaction('rw', 'info', async () => {
+    let infoCache = await db.info.get(fakeid);
+    if (infoCache) {
+      infoCache.last_update_time = Math.round(Date.now() / 1000);
+      db.info.put(infoCache);
+    }
+    return true;
+  });
+}
+
 /**
  * 获取 info 缓存
  * @param fakeid
@@ -62,4 +76,29 @@ export async function getInfoCache(fakeid: string): Promise<Info | undefined> {
 
 export async function getAllInfo(): Promise<Info[]> {
   return db.info.toArray();
+}
+
+// 获取公众号的名称
+export async function getAccountNameByFakeid(fakeid: string): Promise<string | null> {
+  const account = await getInfoCache(fakeid);
+  if (!account) {
+    return null;
+  }
+
+  return account.nickname || null;
+}
+
+// 批量导入公众号
+export async function importInfos(infos: Info[]): Promise<void> {
+  for (const info of infos) {
+    // 导入时需要把相关数量置空
+    info.completed = false;
+    info.count = 0;
+    info.articles = 0;
+    info.total_count = 0;
+    info.create_time = undefined;
+    info.update_time = undefined;
+    info.last_update_time = undefined;
+    await updateInfoCache(info);
+  }
 }

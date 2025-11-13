@@ -28,6 +28,6 @@ onUnmounted(() => {
 
 <template>
   <p class="text-sm">
-    数据库占用约为 <span class="text-rose-500">{{ usage }}</span>
+    本地数据库占用约为 <span class="text-rose-500">{{ usage }}</span>
   </p>
 </template>

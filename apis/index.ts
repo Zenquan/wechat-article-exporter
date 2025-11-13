@@ -10,48 +10,21 @@ import { ACCOUNT_LIST_PAGE_SIZE, ARTICLE_LIST_PAGE_SIZE } from '~/config';
 import { updateAPICache } from '~/store/v2/api';
 import { updateArticleCache } from '~/store/v2/article';
 import type { CommentResponse } from '~/types/comment';
-import type { Info } from '~/store/v2/info';
-
-interface AuthorInfoResponse {
-  base_resp: { ret: number };
-  identity_name: string;
-  is_verify: number;
-  original_article_count: number;
-}
+import { type Info, updateLastUpdateTime } from '~/store/v2/info';
 
 const loginAccount = useLoginAccount();
 
 /**
- * 获取公众号主体信息
- * @param biz
- */
-export async function authorInfo(biz: string) {
-  return await $fetch<AuthorInfoResponse>('/api/authorinfo', {
-    method: 'GET',
-    query: {
-      biz: biz,
-    },
-  });
-}
-
-/**
  * 获取文章列表
  * @param account
- * @param token
  * @param begin
  * @param keyword
  */
-export async function getArticleList(
-  account: Info,
-  token: string,
-  begin = 0,
-  keyword = ''
-): Promise<[AppMsgEx[], boolean, number]> {
-  const resp = await $fetch<AppMsgPublishResponse>('/api/appmsgpublish', {
+export async function getArticleList(account: Info, begin = 0, keyword = ''): Promise<[AppMsgEx[], boolean, number]> {
+  const resp = await $fetch<AppMsgPublishResponse>('/api/web/mp/appmsgpublish', {
     method: 'GET',
     query: {
       id: account.fakeid,
-      token: token,
       begin: begin,
       size: ARTICLE_LIST_PAGE_SIZE,
       keyword: keyword,
@@ -85,9 +58,13 @@ export async function getArticleList(
       try {
         await updateArticleCache(account, publish_page);
       } catch (e) {
-        console.info('缓存失败');
+        console.warn('缓存失败');
         console.error(e);
       }
+    }
+
+    if (begin === 0) {
+      await updateLastUpdateTime(account.fakeid);
     }
 
     const articles = publish_list.flatMap(item => {
@@ -96,6 +73,7 @@ export async function getArticleList(
     });
     return [articles, isCompleted, publish_page.total_count];
   } else if (resp.base_resp.ret === 200003) {
+    loginAccount.value = null;
     throw new Error('session expired');
   } else {
     throw new Error(`${resp.base_resp.ret}:${resp.base_resp.err_msg}`);
@@ -104,18 +82,16 @@ export async function getArticleList(
 
 /**
  * 获取公众号列表
- * @param token
  * @param begin
  * @param keyword
  */
-export async function getAccountList(token: string, begin = 0, keyword = ''): Promise<[AccountInfo[], boolean]> {
-  const resp = await $fetch<SearchBizResponse>('/api/searchbiz', {
+export async function getAccountList(begin = 0, keyword = ''): Promise<[AccountInfo[], boolean]> {
+  const resp = await $fetch<SearchBizResponse>('/api/web/mp/searchbiz', {
     method: 'GET',
     query: {
-      keyword: keyword,
       begin: begin,
       size: ACCOUNT_LIST_PAGE_SIZE,
-      token: token,
+      keyword: keyword,
     },
     retry: 0,
   });
@@ -140,6 +116,7 @@ export async function getAccountList(token: string, begin = 0, keyword = ''): Pr
 
     return [resp.list, isCompleted];
   } else if (resp.base_resp.ret === 200003) {
+    loginAccount.value = null;
     throw new Error('session expired');
   } else {
     throw new Error(`${resp.base_resp.ret}:${resp.base_resp.err_msg}`);
@@ -155,10 +132,10 @@ export async function getComment(commentId: string) {
     // 本地设置的 credentials
     const credentials = JSON.parse(window.localStorage.getItem('credentials')!);
     if (!credentials || !credentials.__biz || !credentials.pass_ticket || !credentials.key || !credentials.uin) {
-      console.log('credentials not set');
+      console.warn('credentials not set');
       return null;
     }
-    const response = await $fetch<CommentResponse>('/api/comment', {
+    const response = await $fetch<CommentResponse>('/api/web/misc/comment', {
       method: 'get',
       query: {
         comment_id: commentId,

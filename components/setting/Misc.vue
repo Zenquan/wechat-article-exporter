@@ -64,6 +64,10 @@
         </div>
       </div>
     </div>
+    <!--    <div class="border border-slate-200 p-3 rounded-md mt-5">-->
+    <!--      <p class="mb-3">同步时间范围：</p>-->
+    <!--      <RadioGroup name="duration" :options="DURATION_OPTIONS" v-model="preferences.syncDateRange" />-->
+    <!--    </div>-->
   </UCard>
 </template>
 
@@ -71,4 +75,35 @@
 import type { Preferences } from '~/types/preferences';
 
 const preferences: Ref<Preferences> = usePreferences() as unknown as Ref<Preferences>;
+
+const DURATION_OPTIONS = [
+  {
+    value: '1d',
+    label: '最近一天',
+  },
+  {
+    value: '7d',
+    label: '最近七天',
+  },
+  {
+    value: '1m',
+    label: '最近一个月',
+  },
+  {
+    value: '3m',
+    label: '最近三个月',
+  },
+  {
+    value: '6m',
+    label: '最近半年',
+  },
+  {
+    value: '1y',
+    label: '最近一年',
+  },
+  {
+    value: 'all',
+    label: '全部',
+  },
+];
 </script>

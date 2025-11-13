@@ -18,7 +18,7 @@ export interface Preferences {
   // 公众号同步频率(单位:秒)
   accountSyncSeconds: number;
 
-  api_auth: APIAuth | null;
+  syncDateRange: '1d' | '3d' | '7d' | '1m' | '3m' | '6m' | '1y' | 'all';
 }
 
 interface ExportConfig {

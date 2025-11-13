@@ -1,15 +1,13 @@
 <template>
   <UCard class="mx-4 mt-10">
     <template #header>
-      <h3 class="text-2xl font-semibold">私有代理</h3>
-      <p class="text-sm text-slate-10 font-serif">配置的私有代理地址仅供您本人使用</p>
+      <h3 class="text-2xl font-semibold">代理节点</h3>
+      <p class="text-sm text-slate-10 font-serif">
+        若此处留空，则网站将使用
+        <ExternalLink :href="docsWebSite + '/get-started/proxy.html'" text="公共代理" /> 进行资源下载。
+      </p>
       <p>
-        <a
-          :href="docsWebSite + '/get-started/private-proxy.html'"
-          target="_blank"
-          class="underline text-blue-600 text-sm"
-          >如何搭建私有代理？</a
-        >
+        <ExternalLink :href="docsWebSite + '/get-started/private-proxy.html'" text="如何搭建代理节点？" />
       </p>
     </template>
 
@@ -21,16 +19,8 @@
         placeholder="请填写私有部署的代理地址，一行一个"
       ></textarea>
       <div class="flex-1 flex-shrink-0">
-        <div>
-          <p>认证密钥：</p>
-          <UInput
-            placeholder="配置私有代理的认证密钥"
-            v-model="preferences.privateProxyAuthorization"
-            class="font-mono"
-          />
-        </div>
         <div class="my-5">
-          <p>代理地址要求：</p>
+          <p>代理节点地址要求：</p>
           <ol>
             <li>
               <p>1. 以 <code class="text-rose-500 font-mono">http/https</code> 开头的绝对路径地址。</p>
@@ -55,6 +45,7 @@
 <script setup lang="ts">
 import { docsWebSite } from '~/config';
 import type { Preferences } from '~/types/preferences';
+import ExternalLink from '~/components/base/ExternalLink.vue';
 
 const preferences: Ref<Preferences> = usePreferences() as unknown as Ref<Preferences>;
 
